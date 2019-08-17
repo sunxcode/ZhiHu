@@ -4,7 +4,9 @@
 [![License](https://img.shields.io/cocoapods/l/DNSPageView.svg?style=flat)](http://cocoapods.org/pods/DNSPageView)
 [![Platform](https://img.shields.io/cocoapods/p/DNSPageView.svg?style=flat)](http://cocoapods.org/pods/DNSPageView)
 
-DNSPageView一个纯Swift的轻量级、灵活且易于使用的pageView框架，titleView和contentView可以布局在任意地方，可以纯代码初始化，也可以使用xib或者storyboard初始化，并且提供了常见样式属性进行设置。
+[English Introduction](https://github.com/Danie1s/DNSPageView/blob/master/README_EN.md)
+
+DNSPageView一个纯Swift的轻量级、灵活且易于使用的`PageView`框架，`titleView`和`contentView`可以布局在任意地方，可以纯代码初始化，也可以使用`xib`或者`storyboard`初始化，并且提供了常见样式属性进行设置。
 
 如果你使用的开发语言是Objective-C，请使用[DNSPageView-ObjC](https://github.com/Danie1s/DNSPageView-ObjC)
 
@@ -27,16 +29,14 @@ DNSPageView一个纯Swift的轻量级、灵活且易于使用的pageView框架�
 - [x] 多种初始化方式
 - [x] 灵活布局
 - [x] 常见的样式
-- [x] 双击titleView的回调
-- [x] contentView滑动监听
+- [x] 双击`titleView`的回调
+- [x] `contentView`滑动监听
 
 ## Requirements
 
 - iOS 8.0+
-
-- Xcode 10.0+
-
-- Swift 4.2+
+- Xcode 10.2+
+- Swift 5.0+
 
 
 ## Installation
@@ -99,24 +99,25 @@ To run the example project, clone the repo, and run `DNSPageView.xcodeproj` .
 ```swift
 // 创建DNSPageStyle，设置样式
 let style = DNSPageStyle()
-style.isTitleScrollEnable = true
-style.isScaleEnable = true
+style.isTitleViewScrollEnabled = true
+style.isTitleScaleEnabled = true
 
 // 设置标题内容
 let titles = ["头条", "视频", "娱乐", "要问", "体育" , "科技" , "汽车" , "时尚" , "图片" , "游戏" , "房产"]
 
 // 创建每一页对应的controller
-let childViewControllers: [ContentViewController] = titles.map { _ -> ContentViewController in
-    let controller = ContentViewController()
-    controller.view.backgroundColor = UIColor.randomColor
+let childViewControllers: [UIViewController] = titles.map { _ -> UIViewController in
+    let controller = UIViewController()
+    addChild(controller)
     return controller
 }
 
+let y = UIApplication.shared.statusBarFrame.height + (navigationController?.navigationBar.frame.height ?? 0)
 let size = UIScreen.main.bounds.size
 
 // 创建对应的DNSPageView，并设置它的frame
 // titleView和contentView会连在一起
-let pageView = DNSPageView(frame: CGRect(x: 0, y: 64, width: size.width, height: size.height), style: style, titles: titles, childViewControllers: childViewControllers)
+let pageView = DNSPageView(frame: CGRect(x: 0, y: y, width: size.width, height: size.height), style: style, titles: titles, childViewControllers: childViewControllers)
 view.addSubview(pageView)
 ```
 
@@ -124,7 +125,7 @@ view.addSubview(pageView)
 
 ### 使用xib或者storyboard初始化
 
- 在xib或者storyboard中拖出2个UIView，让它们分别继承DNSPageTitleView和DNSPageContentView，拖线到代码中
+ 在`xib`或者`storyboard`中拖出2个`UIView`，让它们分别继承`DNSPageTitleView`和`DNSPageContentView`，拖线到代码中
 
 ```swift
 @IBOutlet weak var titleView: DNSPageTitleView!
@@ -156,9 +157,9 @@ titleView.setupUI()
 
 
 // 创建每一页对应的controller
-let childViewControllers: [ContentViewController] = titles.map { _ -> ContentViewController in
-    let controller = ContentViewController()
-    controller.view.backgroundColor = UIColor.randomColor
+let childViewControllers: [UIViewController] = titles.map { _ -> UIViewController in
+    let controller = UIViewController()
+    addChild(controller)
     return controller
 }
 
@@ -186,16 +187,16 @@ private lazy var pageViewManager: DNSPageViewManager = {
     // 创建DNSPageStyle，设置样式
     let style = DNSPageStyle()
     style.isShowBottomLine = true
-    style.isTitleScrollEnable = true
+    style.isTitleViewScrollEnabled = true
     style.titleViewBackgroundColor = UIColor.clear
 
     // 设置标题内容
     let titles = ["头条", "视频", "娱乐", "要问", "体育"]
 
     // 创建每一页对应的controller
-    let childViewControllers: [ContentViewController] = titles.map { _ -> ContentViewController in
-        let controller = ContentViewController()
-        controller.view.backgroundColor = UIColor.randomColor
+    let childViewControllers: [UIViewController] = titles.map { _ -> UIViewController in
+        let controller = UIViewController()
+        addChild(controller)
         return controller
     }
 
@@ -222,23 +223,27 @@ contentView.snp.makeConstraints { (maker) in
 
 ### 样式
 
-DNSPageStyle中提供了常见样式的属性，可以按照不同的需求进行设置，包括可以设置初始显示的页面
+`DNSPageStyle`中提供了常见样式的属性，可以按照不同的需求进行设置，包括可以设置初始显示的页面
 
 
 
-### 事件监听
+### 事件回调
 
-DNSPageView提供了常见事件监听的代理，它属于DNSPageTitleViewDelegate的中的可选属性
+DNSPageView提供了常见事件监听回调，它属于`DNSPageTitleViewDelegate`的中的可选属性
 
 ```swift
-/// 如果contentView中的view需要实现某些刷新的方法，请让对应的childViewController遵守这个协议
-@objc public protocol DNSPageReloadable: class {
+/// DNSPageView的事件回调，如果有需要，请让对应的childViewController遵守这个协议
+@objc public protocol DNSPageEventHandleable: class {
     
-    /// 如果需要双击标题刷新或者作其他处理，请实现这个方法
-    @objc optional func titleViewDidSelectedSameTitle()
+    /// 重复点击pageTitleView后调用
+    @objc optional func titleViewDidSelectSameTitle()
     
-    /// 如果pageContentView滚动到下一页停下来需要刷新或者作其他处理，请实现这个方法
+    /// pageContentView的上一页消失的时候，上一页对应的controller调用
+    @objc optional func contentViewDidDisappear()
+    
+    /// pageContentView滚动停止的时候，当前页对应的controller调用
     @objc optional func contentViewDidEndScroll()
+
 }
 ```
 
@@ -246,15 +251,32 @@ DNSPageView提供了常见事件监听的代理，它属于DNSPageTitleViewDeleg
 
 ### 常见问题
 
-- 标签比较少时，`titleView`不固定、会滑动
+- `style.isTitleViewScrollEnabled`
 
-  当`style.isTitleViewScrollEnabled = true`时，代表标签会比较多，所以默认会滑动。如果标签比较少，建议设置`style.isTitleViewScrollEnabled = false`。
+  如果`titles`的数量比较少，建议设置`style.isTitleViewScrollEnabled = false`，`titleView`会固定，`style.titleMargin`不起作用，每个`title`平分整个`titleView`的宽度，下划线的宽度等于`title`的宽度。
+
+  如果标签比较多，建议设置`style.isTitleViewScrollEnabled = true`，`titleView`会滑动，下划线的宽度随着`title`文字的宽度变化而变化
 
 - 标签下划线的宽度跟随文字的宽度
 
-  当`style.isTitleViewScrollEnabled = false`时，表示标签比较少，默认每个标签平分整个`titleView`的宽度，而下划线的宽度等于标签的宽度，这种样式的需求也很常见。
+  设置`style.isTitleViewScrollEnabled = true`，可以参考`Demo`中的第四种样式。
 
-  要想实现标签下划线的宽度跟随文字的宽度，需要设置`style.isTitleViewScrollEnabled = true`，结合第一个问题，如果标签比较少，则需要手动计算标签的宽度，设置对应的`titleView`宽度，详细的代码可以参考demo中的第四种样式。
+- 由于`DNSPageView`是基于`UIScrollView`实现，那么就无法避免它的一些特性：
+
+  - 当控制器被`UINavigationController`管理，且`navigationBar.isTranslucent = true`的时候，当前控制器的`view`是从`y = 0`开始布局的，所以为了防止部分内容被`navigationBar`遮挡，系统默认会给`UIScrollView`添加offset。如果想取消这个特性：
+    - iOS 11 以前，在控制器中设置`automaticallyAdjustsScrollViewInsets = false `
+    - iOS 11 以后引入`SafeArea`概念，设置`UIScrollView`的属性`contentInsetAdjustmentBehavior = .never`
+    - 其实这个效果还与`UIViewController`的其他属性有关系，但因为各种组合的情景过于复杂，所以不在此一一描述
+
+  - `DNSPageContentView`用`UICollectionView`实现，所以这个特性有机会造成`UICollectionView`的经典警告：
+
+    > The behavior of the UICollectionViewFlowLayout is not defined because:
+    >
+    > the item height must be less than the height of the UICollectionView minus the section insets top and bottom values, minus the content insets top and bottom values
+
+    从而引发一些Bug
+
+  - 以上只是可能出现的Bug之一，由于`Demo`不能覆盖所有的场景，不同的布局需求可能会引起不同的Bug，开发者需要明确了解自己的布局需求，注意细节，了解iOS布局特性，并且作出对应的调整，不能完全参照`Demo`。
 
 
 ## License

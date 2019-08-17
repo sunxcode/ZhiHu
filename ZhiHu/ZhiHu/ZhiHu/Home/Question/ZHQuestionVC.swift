@@ -40,11 +40,11 @@ class ZHQuestionVC: ZHBaseVC {
     }()
 
     lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: UITableViewStyle.grouped)
+        let tableView = UITableView(frame: .zero, style: UITableView.Style.grouped)
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(QuestionBaseCell.self, forCellReuseIdentifier: QuestionBaseCellID)
-        tableView.separatorStyle = UITableViewCellSeparatorStyle.none
+        tableView.separatorStyle = UITableViewCell.SeparatorStyle.none
         tableView.tableHeaderView = headerView
         return tableView
     }()

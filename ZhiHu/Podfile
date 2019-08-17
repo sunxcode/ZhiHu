@@ -8,7 +8,7 @@ use_frameworks!
     #banner滚动图片
     pod 'FSPagerView'
     pod 'Moya'
-    pod 'HandyJSON', '~> 4.2.0'
+    pod 'HandyJSON' 
     pod 'SwiftyJSON'
     # 分页
     pod 'DNSPageView'

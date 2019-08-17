@@ -46,12 +46,12 @@ class ZHHomeController: ZHBaseVC {
     }()
     
     lazy var questionBtn: UIButton = {
-        let questionBtn = UIButton.init(type: UIButtonType.system)
+        let questionBtn = UIButton.init(type: UIButton.ButtonType.system)
         questionBtn.frame = CGRect(x: ScreenWidth - 85, y: StatusBarHeight + 10, width: 80, height: 30)
-        questionBtn.setTitle("提问", for: UIControlState.normal)
-        questionBtn.setImage(UIImage(named: "ZHModuleColumnImage.bundle/Night_ZHAPP_Ask_Post"), for: UIControlState.normal)
+        questionBtn.setTitle("提问", for: UIControl.State.normal)
+        questionBtn.setImage(UIImage(named: "ZHModuleColumnImage.bundle/Night_ZHAPP_Ask_Post"), for: UIControl.State.normal)
         questionBtn.blueTheme()
-        questionBtn.addTarget(self, action: #selector(questionAction(button:)), for: UIControlEvents.touchUpInside)
+        questionBtn.addTarget(self, action: #selector(questionAction(button:)), for: UIControl.Event.touchUpInside)
         return questionBtn
     }()
     
@@ -62,7 +62,7 @@ class ZHHomeController: ZHBaseVC {
         initSearchBar()
 
         for vc in viewControllers {
-            addChildViewController(vc)
+            addChild(vc)
         }
         view.addSubview(pageView)
     }

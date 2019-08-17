@@ -22,7 +22,7 @@ class ZHHotVC: ZHBaseVC {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(HotListCell.self, forCellReuseIdentifier: "cell")
-        tableView.separatorStyle = UITableViewCellSeparatorStyle.singleLine
+        tableView.separatorStyle = UITableViewCell.SeparatorStyle.singleLine
         tableView.tableHeaderView = UIView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: CGFloat.leastNormalMagnitude))
         return tableView
     }()

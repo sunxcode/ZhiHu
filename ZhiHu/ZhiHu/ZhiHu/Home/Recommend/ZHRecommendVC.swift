@@ -22,14 +22,14 @@ class ZHRecommendVC: ZHBaseVC {
     var pageIndex: Int = 0
 
     lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: UITableViewStyle.grouped)
+        let tableView = UITableView(frame: .zero, style: UITableView.Style.grouped)
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(ZHHomeBaseCell.self, forCellReuseIdentifier: ZHHomeBaseCellID)
         tableView.register(HomeRecommendImageCell.self, forCellReuseIdentifier: HomeRecommendImageCellID)
         tableView.register(HomeRecommendBigImageCell.self, forCellReuseIdentifier: HomeRecommendBigImageCellID)
         tableView.register(HomeListVideoCell.self, forCellReuseIdentifier: HomeListVideoCellID)
-        tableView.separatorStyle = UITableViewCellSeparatorStyle.none
+        tableView.separatorStyle = UITableViewCell.SeparatorStyle.none
         return tableView
     }()
 

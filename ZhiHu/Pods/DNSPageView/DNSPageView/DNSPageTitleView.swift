@@ -28,20 +28,24 @@ import UIKit
 
 @objc public protocol DNSPageTitleViewDelegate: class {
     
-    /// pageContentView的刷新代理
-    @objc optional var reloader: DNSPageReloadable? { get }
+    /// DNSPageView的事件回调处理者
+    @objc optional var eventHandler: DNSPageEventHandleable? { get }
     
     func titleView(_ titleView: DNSPageTitleView, didSelectAt index: Int)
 }
 
-/// 如果contentView中的view需要实现某些刷新的方法，请让对应的childViewController遵守这个协议
-@objc public protocol DNSPageReloadable: class {
+/// DNSPageView的事件回调，如果有需要，请让对应的childViewController遵守这个协议
+@objc public protocol DNSPageEventHandleable: class {
     
-    /// 如果需要双击标题刷新或者作其他处理，请实现这个方法
+    /// 重复点击pageTitleView后调用
     @objc optional func titleViewDidSelectSameTitle()
     
-    /// 如果pageContentView滚动到下一页停下来需要刷新或者作其他处理，请实现这个方法
+    /// pageContentView的上一页消失的时候，上一页对应的controller调用
+    @objc optional func contentViewDidDisappear()
+    
+    /// pageContentView滚动停止的时候，当前页对应的controller调用
     @objc optional func contentViewDidEndScroll()
+    
 }
 
 
@@ -125,7 +129,7 @@ open class DNSPageTitleView: UIView {
     /// 通过代码实现点了某个位置的titleView
     ///
     /// - Parameter index: 需要点击的titleView的下标
-    public func selectedTitle(atIndex index: Int) {
+    public func selectedTitle(at index: Int) {
         if index > titles.count || index < 0 {
             print("DNSPageTitleView -- selectedTitle: 数组越界了, index的值超出有效范围");
         }
@@ -133,7 +137,7 @@ open class DNSPageTitleView: UIView {
         clickHandler?(self, index)
 
         if index == currentIndex {
-            delegate?.reloader??.titleViewDidSelectSameTitle?()
+            delegate?.eventHandler??.titleViewDidSelectSameTitle?()
             return
         }
 
@@ -142,13 +146,14 @@ open class DNSPageTitleView: UIView {
 
         sourceLabel.textColor = style.titleColor
         targetLabel.textColor = style.titleSelectedColor
+        
+        delegate?.eventHandler??.contentViewDidDisappear?()
 
         currentIndex = index
 
-        adjustLabelPosition(targetLabel)
-
         delegate?.titleView(self, didSelectAt: currentIndex)
-
+        
+        adjustLabelPosition(targetLabel)
 
         if style.isTitleScaleEnabled {
             UIView.animate(withDuration: 0.25, animations: {
@@ -159,22 +164,21 @@ open class DNSPageTitleView: UIView {
 
         if style.isShowBottomLine {
             UIView.animate(withDuration: 0.25, animations: {
-                self.bottomLine.frame.origin.x = targetLabel.frame.origin.x
-                self.bottomLine.frame.size.width = targetLabel.frame.width
+                self.bottomLine.center.x = targetLabel.center.x
+                self.bottomLine.frame.size.width = self.style.bottomLineWidth > 0 ? self.style.bottomLineWidth : targetLabel.frame.width
             })
         }
 
         if style.isShowCoverView {
-            let x = style.isTitleViewScrollEnabled ? (targetLabel.frame.origin.x - style.coverMargin) : targetLabel.frame.origin.x
-            let width = style.isTitleViewScrollEnabled ? (targetLabel.frame.width + style.coverMargin * 2) : targetLabel.frame.width
             UIView.animate(withDuration: 0.25, animations: {
-                self.coverView.frame.origin.x = x
-                self.coverView.frame.size.width = width
+                self.coverView.center.x = targetLabel.center.x
+                self.coverView.frame.size.width = self.style.isTitleViewScrollEnabled ? (targetLabel.frame.width + self.style.coverMargin * 2) : targetLabel.frame.width
             })
         }
 
         sourceLabel.backgroundColor = UIColor.clear
         targetLabel.backgroundColor = style.titleViewSelectedColor
+                
     }
     
 }
@@ -239,18 +243,18 @@ extension DNSPageTitleView {
         var x: CGFloat = 0
         let y: CGFloat = 0
         var width: CGFloat = 0
-        let height = frame.size.height
+        let height = frame.height
         
         let count = titleLabels.count
         for (i, titleLabel) in titleLabels.enumerated() {
             if style.isTitleViewScrollEnabled {
-                width = (titles[i] as NSString).boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 0), options: .usesLineFragmentOrigin, attributes: [NSAttributedString.Key.font : titleLabel.font], context: nil).width
+                width = (titles[i] as NSString).boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 0), options: .usesLineFragmentOrigin, attributes: [NSAttributedString.Key.font : style.titleFont], context: nil).width
                 x = i == 0 ? style.titleMargin * 0.5 : (titleLabels[i - 1].frame.maxX + style.titleMargin)
             } else {
-                width = bounds.width / CGFloat(count)
+                width = frame.width / CGFloat(count)
                 x = width * CGFloat(i)
             }
-            
+            titleLabel.transform = CGAffineTransform.identity
             titleLabel.frame = CGRect(x: x, y: y, width: width, height: height)
         }
         
@@ -267,25 +271,23 @@ extension DNSPageTitleView {
     private func setupCoverViewLayout() {
         guard currentIndex < titleLabels.count else { return }
         let label = titleLabels[currentIndex]
-        var width = label.bounds.width
+        var width = label.frame.width
         let height = style.coverViewHeight
-        var x = label.frame.origin.x
-        let y = (label.frame.height - height) * 0.5
         if style.isTitleViewScrollEnabled {
-            x -= style.coverMargin
             width += 2 * style.coverMargin
         }
-        coverView.frame = CGRect(x: x, y: y, width: width, height: height)
+        coverView.frame.size = CGSize(width: width, height: height)
+        coverView.center = label.center
     }
     
     private func setupBottomLineLayout() {
         guard currentIndex < titleLabels.count else { return }
         let label = titleLabels[currentIndex]
         
-        bottomLine.frame.origin.x = label.frame.origin.x
-        bottomLine.frame.origin.y = self.bounds.height - self.style.bottomLineHeight
-        bottomLine.frame.size.width = label.frame.width
-        bottomLine.frame.size.height = self.style.bottomLineHeight
+        bottomLine.frame.size.width = style.bottomLineWidth > 0 ? style.bottomLineWidth : label.frame.width
+        bottomLine.frame.size.height = style.bottomLineHeight
+        bottomLine.center.x = label.center.x
+        bottomLine.frame.origin.y = frame.height - bottomLine.frame.height
     }
 }
 
@@ -293,22 +295,24 @@ extension DNSPageTitleView {
 extension DNSPageTitleView {
     @objc private func tapedTitleLabel(_ tapGes : UITapGestureRecognizer) {
         guard let index = tapGes.view?.tag else { return }
-        selectedTitle(atIndex: index)
+        selectedTitle(at: index)
 
     }
 
 
     
     private func adjustLabelPosition(_ targetLabel : UILabel) {
-        guard style.isTitleViewScrollEnabled else { return }
+        guard style.isTitleViewScrollEnabled,
+            scrollView.contentSize.width > scrollView.frame.width
+            else { return }
         
-        var offsetX = targetLabel.center.x - bounds.width * 0.5
+        var offsetX = targetLabel.center.x - frame.width * 0.5
         
         if offsetX < 0 {
             offsetX = 0
         }
-        if offsetX > scrollView.contentSize.width - scrollView.bounds.width {
-            offsetX = scrollView.contentSize.width - scrollView.bounds.width
+        if offsetX > scrollView.contentSize.width - scrollView.frame.width {
+            offsetX = scrollView.contentSize.width - scrollView.frame.width
         }
         
         scrollView.setContentOffset(CGPoint(x: offsetX, y: 0), animated: true)
@@ -353,17 +357,19 @@ extension DNSPageTitleView : DNSPageContentViewDelegate {
         }
         
         if style.isShowBottomLine {
-            let deltaX = targetLabel.frame.origin.x - sourceLabel.frame.origin.x
-            let deltaW = targetLabel.frame.width - sourceLabel.frame.width
-            bottomLine.frame.origin.x = sourceLabel.frame.origin.x + progress * deltaX
-            bottomLine.frame.size.width = sourceLabel.frame.width + progress * deltaW
+            let deltaCenterX = targetLabel.center.x - sourceLabel.center.x
+            let deltaWidth = targetLabel.frame.width - sourceLabel.frame.width
+            bottomLine.center.x = sourceLabel.center.x + progress * deltaCenterX
+            if style.bottomLineWidth <= 0 {
+                bottomLine.frame.size.width = sourceLabel.frame.width + progress * deltaWidth
+            }
         }
-        
+
         if style.isShowCoverView {
-            let deltaX = targetLabel.frame.origin.x - sourceLabel.frame.origin.x
-            let deltaW = targetLabel.frame.width - sourceLabel.frame.width
-            coverView.frame.size.width = style.isTitleViewScrollEnabled ? (sourceLabel.frame.width + 2 * style.coverMargin + deltaW * progress) : (sourceLabel.frame.width + deltaW * progress)
-            coverView.frame.origin.x = style.isTitleViewScrollEnabled ? (sourceLabel.frame.origin.x - style.coverMargin + deltaX * progress) : (sourceLabel.frame.origin.x + deltaX * progress)
+            let deltaCenterX = targetLabel.center.x - sourceLabel.center.x
+            let deltaWidth = targetLabel.frame.width - sourceLabel.frame.width
+            coverView.frame.size.width = style.isTitleViewScrollEnabled ? (sourceLabel.frame.width + 2 * style.coverMargin + deltaWidth * progress) : (sourceLabel.frame.width + deltaWidth * progress)
+            coverView.center.x = sourceLabel.center.x + deltaCenterX * progress
         }
         
     }
@@ -377,14 +383,15 @@ extension DNSPageTitleView : DNSPageContentViewDelegate {
             }
             
             if self.style.isShowBottomLine {
-                self.bottomLine.frame.origin.x = targetLabel.frame.origin.x
-                self.bottomLine.frame.size.width = targetLabel.frame.width
+                self.bottomLine.center.x = targetLabel.center.x
+                if self.style.bottomLineWidth <= 0 {
+                    self.bottomLine.frame.size.width = targetLabel.frame.width
+                }
             }
             
             if self.style.isShowCoverView {
-                
                 self.coverView.frame.size.width = self.style.isTitleViewScrollEnabled ? (targetLabel.frame.width + 2 * self.style.coverMargin) : targetLabel.frame.width
-                self.coverView.frame.origin.x = self.style.isTitleViewScrollEnabled ? (targetLabel.frame.origin.x - self.style.coverMargin) : targetLabel.frame.origin.x
+                self.coverView.center.x = targetLabel.center.x
             }
         }
         
